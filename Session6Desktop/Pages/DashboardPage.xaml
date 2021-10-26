@@ -35,6 +35,8 @@
                         <Setter Property="AutoGenerateColumns" Value="False"/>
                         <Setter Property="IsReadOnly" Value="True"/>
                         <Setter Property="Margin" Value="10"/>
+                        <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+                        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
                     </Style>
                 </Grid.Resources>
 
@@ -42,11 +44,8 @@
                     <DataGrid x:Name="GridDepartment">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Department/Month"
-                                                Width="*"/>
-                            <DataGridTextColumn Header="2019-08"
-                                                Width="*"/>
-                            <DataGridTextColumn Header="2019-07"
-                                                Width="*"/>
+                                                Width="*"
+                                                Binding="{Binding Path=[0]}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </GroupBox>
@@ -57,10 +56,6 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Notes/Month"
                                                 Width="*"/>
-                            <DataGridTextColumn Header="2019-08"
-                                                Width="*"/>
-                            <DataGridTextColumn Header="2019-07"
-                                                Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </GroupBox>
@@ -70,10 +65,6 @@
                     <DataGrid x:Name="GridAssets">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Asset Name/Month"
-                                                Width="*"/>
-                            <DataGridTextColumn Header="2019-08"
-                                                Width="*"/>
-                            <DataGridTextColumn Header="2019-07"
                                                 Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -125,7 +116,7 @@
                     <charts:Chart x:Name="ChartRatio">
                         <charts:Chart.Legends>
                             <charts:Legend>
-                                
+                                <!-- xnj ltkfnm rfr ltkfnm -->
                             </charts:Legend>
                         </charts:Chart.Legends>
                     </charts:Chart>
@@ -139,7 +130,7 @@
                     <charts:Chart x:Name="ChartMonthly">
                         <charts:Chart.Legends>
                             <charts:Legend>
-                                
+                                <!-- z negfz :) -->
                             </charts:Legend>
                         </charts:Chart.Legends>
                     </charts:Chart>

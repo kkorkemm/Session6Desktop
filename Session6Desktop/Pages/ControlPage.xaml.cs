@@ -22,6 +22,8 @@ namespace Session6Desktop.Pages
     /// </summary>
     public partial class ControlPage : Page
     {
+        private List<OrderItems> partList = new List<OrderItems>();
+
         public ControlPage()
         {
             InitializeComponent();
@@ -62,6 +64,9 @@ namespace Session6Desktop.Pages
             UpdateComboAssets();
         }
 
+        /// <summary>
+        /// Поиск деталей
+        /// </summary>
         private void BtnAllocate_Click(object sender, RoutedEventArgs e)
         {
             StringBuilder errors = new StringBuilder();
@@ -88,9 +93,19 @@ namespace Session6Desktop.Pages
             }
             if (!string.IsNullOrWhiteSpace(TextAmount.Text))
             {
-                decimal amount = Convert.ToDecimal(TextAmount.Text);
-                list = list.Where(p => p.Amount == amount).ToList();
+                try
+                {
+                    decimal amount = Convert.ToDecimal(TextAmount.Text);
+                    list = list.Where(p => p.Amount == amount).ToList();
+                }
+                catch
+                {
+                    MessageBox.Show("Количеством может быть положительное число", "Внимание!", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }    
             }
+
+            // метод сортировки
             if (ComboMethod.SelectedItem != null)
             {
                 if (ComboMethod.SelectedIndex == 0)
@@ -103,13 +118,16 @@ namespace Session6Desktop.Pages
                 }
                 if (ComboMethod.SelectedIndex == 2)
                 {
-                    list = list.OrderBy(p => p.UnitPrice).ToList();
+                    list = list.OrderBy(p => p.UnitPrice * p.Amount).ToList();
                 }
             }
 
             GridAllocatedParts.ItemsSource = list;
         }
 
+        /// <summary>
+        /// Добавление деталей в список
+        /// </summary>
         private void BtnAssign_Click(object sender, RoutedEventArgs e)
         {
             var selectedItems = GridAllocatedParts.SelectedItems;
@@ -125,23 +143,88 @@ namespace Session6Desktop.Pages
 
             foreach (var i in selectedItems)
             {
-
+                partList.Add(i as OrderItems);
             }
 
-            GridAssignedParts.ItemsSource = selectedItems;
+            /// НАДО БЫЛО ДОБАВБЛЯТЬ В КОНЦЕ TOLIST() АААААААААААААА
+            GridAssignedParts.ItemsSource = partList.ToList();
         }
 
+        /// <summary>
+        /// Удаление деталей из списка
+        /// </summary>
         private void BtnRemove_Click(object sender, RoutedEventArgs e)
         {
+            var item = (sender as Button).DataContext as OrderItems;
+            partList.Remove(item);
 
+            GridAssignedParts.ItemsSource = partList.ToList();
         }
 
+        /// <summary>
+        /// Сохранение (Submit)
+        /// </summary>
         private void BtnSubmit_Click(object sender, RoutedEventArgs e)
         {
             if (GridAssignedParts.Items.Count == 0)
             {
                 MessageBox.Show("Для сохранения необходимо выбрать не менее одной части", "Внимание!", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+
+            var EM = ComboAsset.SelectedItem as EmergencyMaintenances;
+            var warehouse = ComboWarehouse.SelectedItem as Warehouses;
+
+            // сохранение заказа
+            Orders newOrder = new Orders()
+            {
+                TransactionTypeID = 3,
+                EmergencyMaintenancesID = EM.ID,
+                DestinationWarehouseID = warehouse.ID,
+                Date = DateTime.Now,
+            };
+
+            try
+            {
+                AppData.GetContext().Orders.Add(newOrder);
+                AppData.GetContext().SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+            // получение ID только что созданного заказа
+            var newOrdersID = AppData.GetContext().Orders.OrderBy(p => p.ID).ToList().LastOrDefault();
+
+            // добавление частей
+            for (int i = 0; i < GridAssignedParts.Items.Count; i++)
+            {
+                var item = GridAssignedParts.Items[i] as OrderItems;
+
+                OrderItems newItem = new OrderItems()
+                {
+                    OrderID = newOrdersID.ID,
+                    PartID = item.PartID,
+                    Amount = item.Amount,
+                    UnitPrice = item.UnitPrice,
+                    BatchNumber = item.BatchNumber,
+                    Stock = item.Stock
+                };
+
+                AppData.GetContext().OrderItems.Add(newItem);
+            }
+
+            // сохранение
+            try
+            {
+                AppData.GetContext().SaveChanges();
+                MessageBox.Show("Детали успешно сохранены!", "Внимание!", MessageBoxButton.OK, MessageBoxImage.Information);
+                Navigation.MainFrame.Navigate(new DashboardPage());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 
