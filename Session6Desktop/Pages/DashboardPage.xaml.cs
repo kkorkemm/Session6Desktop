@@ -28,62 +28,69 @@ namespace Session6Desktop.Pages
         {
             InitializeComponent();
 
-            #region Пока думаю
-            //ChartRatio.ChartAreas.Add(new ChartArea("Main"));
-            //ChartMonthly.ChartAreas.Add(new ChartArea("Main"));
+            DownloadDiagrams();
+            DownloadGrids();
+        }
 
-            //var departmentsSeries = new Series("Departments") { IsValueShownAsLabel = true };
-            //ChartRatio.Series.Add(departmentsSeries);
-            //var monthSeries = new Series("Months") { IsValueShownAsLabel = true };
-            //ChartMonthly.Series.Add(monthSeries);
+        private void DownloadDiagrams()
+        {
+            /// уникальные департаменты
+            var departments = AppData.GetContext().EmergencyMaintenances.Where(p => p.EMEndDate != null).Select(p => p.Assets.DepartmentLocations.Departments.Name).ToList().Distinct();
 
-            //Series currentSeries = new Series();
-            //currentSeries.ChartType = SeriesChartType.Pie;
-            //currentSeries.Points.Clear();
-            #endregion
+            /// уникальные даты
+            var dates = AppData.GetContext().Orders.Where(p => p.EmergencyMaintenances.EMEndDate != null).ToList().OrderByDescending(p => p.Date).Select(p => p.Date.ToString("yyyy/MM")).Distinct();
 
-            // уникальные отделы с запросами на EM
-            var departments = AppData.GetContext().EmergencyMaintenances.Where(p => p.EMStartDate != null && p.EMEndDate != null).ToList().Select(p => p.Assets.DepartmentLocations.Departments.Name).Distinct();
+            #region RATIO
 
-            // уникальные даты с запросами на EM
-            var dates = AppData.GetContext().Orders.Where(p => p.EmergencyMaintenances.EMStartDate != null && p.EmergencyMaintenances.EMEndDate != null).OrderByDescending(p => p.Date).ToList().Select(p => p.Date.ToString("yyyy/MM")).Distinct();
-
-            foreach (var date in dates)
-            {
-                GridDepartment.Columns.Add(new DataGridTextColumn { Header = date, Binding = new Binding()});
-                GridAssets.Columns.Add(new DataGridTextColumn { Header = date});
-                GridParts.Columns.Add(new DataGridTextColumn { Header = date});
-            }
+            ChartRatio.ChartAreas.Add(new ChartArea("Main"));
+            var ratioSeries = new Series("Departments") { IsValueShownAsLabel = true };
+            ratioSeries.ChartType = SeriesChartType.Pie;
+            ChartRatio.Series.Add(ratioSeries);
 
             foreach (var department in departments)
             {
-                var row = new List<string>();
-                row.Add(department);
-                 
+                var orders = AppData.GetContext().Orders.Where(p => p.EmergencyMaintenances.EMEndDate != null && p.EmergencyMaintenances.Assets.DepartmentLocations.Departments.Name == department).ToList();
+
+                var y = ratioSeries.Points.AddY(orders.Sum(p => p.OrderItems.Sum(a => a.UnitPrice * a.Amount)));
+                ratioSeries.Points[y].AxisLabel = department;
+            }
+
+            #endregion
+
+            #region MONTHLY
+
+            ChartMonthly.ChartAreas.Add(new ChartArea("Main"));
+            var monthSeries = new Series("Spendings") { IsXValueIndexed = true };
+            monthSeries.ChartType = SeriesChartType.Column;
+            ChartMonthly.Series.Add(monthSeries);
+
+            foreach (var department in departments)
+            {
+                var orders = AppData.GetContext().Orders.Where(p => p.EmergencyMaintenances.EMEndDate != null && p.EmergencyMaintenances.Assets.DepartmentLocations.Departments.Name == department).ToList();
+
                 foreach (var date in dates)
                 {
-                    var orders = AppData.GetContext().Orders.Where(p => p.EmergencyMaintenances.EMStartDate != null && p.EmergencyMaintenances.EMEndDate != null && p.EmergencyMaintenances.Assets.DepartmentLocations.Departments.Name == department).ToList();
-
-                    var spendings = orders.Where(p => p.Date.ToString("yyyy/MM") == date).Select(p => p.OrderItems.Sum(a => a.UnitPrice * a.Amount)).Sum().Value.ToString();
-
-                    row.Add(spendings);
+                    monthSeries.Points.AddXY(date, orders.Where(p => p.Date.ToString("yyyy/MM") == date).Sum(p => p.OrderItems.Sum(a => a.UnitPrice * a.Amount)));
                 }
+            }
 
-                GridDepartment.Items.Add(row.ToArray());
+            #endregion
+        }
+
+        private void DownloadGrids()
+        {
+            var dates = AppData.GetContext().Orders.Where(p => p.EmergencyMaintenances.EMEndDate != null).ToList().OrderByDescending(p => p.Date).Select(p => p.Date.ToString("yyyy/MM")).Distinct();
+
+            foreach (var date in dates)
+            {
+                GridAssets.Columns.Add(new DataGridTextColumn { Header = date });
+                GridDepartment.Columns.Add(new DataGridTextColumn { Header = date });
+                GridParts.Columns.Add(new DataGridTextColumn { Header = date });
             }
         }
 
-        /// <summary>
-        /// Многоязычная поддержка 
-        /// </summary>
-        private void WorkWithXml()
-        {
-            XmlDocument xmlDocument = new XmlDocument();
-            xmlDocument.Load(@"C:\Users\Asus\Desktop\WSC2019_TP09_actual\Session6\default.xml");
 
-            XmlElement RootElement = xmlDocument.DocumentElement;
-        }
-
+        #region Навигация и выход
         /// <summary>
         /// Переход на страницу Inventory Control
         /// </summary>
@@ -99,5 +106,6 @@ namespace Session6Desktop.Pages
         {
             Application.Current.Shutdown();
         }
+        #endregion
     }
 }

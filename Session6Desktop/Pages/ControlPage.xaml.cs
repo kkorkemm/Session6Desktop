@@ -102,7 +102,7 @@ namespace Session6Desktop.Pages
                 {
                     MessageBox.Show("Количеством может быть положительное число", "Внимание!", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
-                }    
+                }  
             }
 
             // метод сортировки
